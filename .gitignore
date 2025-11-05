@@ -1,0 +1,96 @@
+# Virtual Environment
+FENV/
+OPNV/
+XENV/
+venv/
+env/
+.venv/
+ENV/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# Logs
+LOG_FILE
+*.log
+logs/
+scrapy_comprehensive.log
+
+# Databases & Vector Stores
+*.sqlite3
+*.db
+chroma_db/
+tenant-vector-stores/
+test_DB/
+tech1/
+final_db/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE & Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.pydevproject
+
+# Build outputs
+build/
+dist/
+*.bundle.js
+*.bundle.js.map
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+.cache/
