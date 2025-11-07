@@ -485,3 +485,94 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete user' });
   }
 };
+
+/**
+ * Get or generate API token for widget authentication
+ * @route   GET /api/user/api-token
+ * @access  Protected (requires JWT)
+ * @query   {boolean} regenerate - Force regenerate a new token
+ * @returns {Object} { apiToken: string }
+ */
+exports.getApiToken = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const regenerate = req.query.regenerate === 'true';
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // If user already has a token and regenerate not requested, return it
+    if (user.apiToken && !regenerate) {
+      return res.json({ apiToken: user.apiToken });
+    }
+
+    // Generate new API token
+    const apiToken = user.generateApiToken();
+    await user.save();
+
+    console.log(`🔑 API token ${regenerate ? 'regenerated' : 'generated'} for user: ${user.username}`);
+
+    res.json({ apiToken });
+  } catch (err) {
+    console.error('❌ Error generating API token:', {
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+    res.status(500).json({ error: 'Failed to generate API token' });
+  }
+};
+
+/**
+ * Get API token for a specific user (admin only)
+ * @route   GET /api/users/:id/api-token
+ * @access  Protected (requires JWT, admin only)
+ * @param   {string} id - User ID
+ * @query   {boolean} regenerate - Force regenerate a new token
+ * @returns {Object} { apiToken: string }
+ */
+exports.getUserApiToken = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const regenerate = req.query.regenerate === 'true';
+    const currentUserRole = req.user.role;
+    const currentUserId = req.user.userId;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Admins can only get tokens for users they created
+    if (currentUserRole === 'admin' && user.adminId && user.adminId.toString() !== currentUserId) {
+      return res.status(403).json({ error: 'Access denied: You can only access tokens for users you created' });
+    }
+
+    // Regular users can only get their own token
+    if (currentUserRole === 'user' && user._id.toString() !== currentUserId) {
+      return res.status(403).json({ error: 'Access denied: You can only access your own token' });
+    }
+
+    // If user already has a token and regenerate not requested, return it
+    if (user.apiToken && !regenerate) {
+      return res.json({ apiToken: user.apiToken });
+    }
+
+    // Generate new API token
+    const apiToken = user.generateApiToken();
+    await user.save();
+
+    console.log(`🔑 API token ${regenerate ? 'regenerated' : 'generated'} for user: ${user.username} (by ${req.user.username})`);
+
+    res.json({ apiToken });
+  } catch (err) {
+    console.error('❌ Error generating API token:', {
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+    res.status(500).json({ error: 'Failed to generate API token' });
+  }
+};

@@ -58,33 +58,31 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow embedding if needed for widgets
 }));
 
-// CORS: Strict origin control from environment variable
-const envOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()).filter(Boolean)
-  : [];
+// CORS: Allow all origins for embeddable widget
+// ⚠️ SECURITY NOTE: This allows ANY website to embed your widget
+// Recommended mitigations:
+// - Implement per-user domain whitelisting in database
+// - Require API key/token authentication in widget
+// - Monitor usage and implement anomaly detection
+// - Use rate limiting (already enabled)
 
-const corsFallbackOrigins = [
-  'http://localhost:3000',
-  'https://localhost:3000',
-  'http://127.0.0.1:3000'
-];
-
-const allowedOrigins = Array.from(new Set([...envOrigins, ...corsFallbackOrigins]));
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, Postman, or proxied requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin, 'Allowed origins:', allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
+  origin: '*', // Allow all origins for widget embedding
+  credentials: false, // Must be false when origin is '*'
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-service-secret'],
   optionsSuccessStatus: 200
 }));
+
+// Log origins for monitoring (development only)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    if (req.headers.origin) {
+      console.log(`📡 Request from origin: ${req.headers.origin}`);
+    }
+    next();
+  });
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));                   // Parse JSON requests with size limit
@@ -215,7 +213,7 @@ const server = app.listen(PORT, () => {
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '⏳ Connecting...'}`);
   console.log(`🤖 FastAPI Bot URL: ${process.env.FASTAPI_BOT_URL || 'NOT SET'}`);
-  console.log(`🛡️  CORS Origins: ${allowedOrigins.join(', ')}`);
+  console.log(`🛡️  CORS: ⚠️  OPEN TO ALL ORIGINS (*) - Widget embedding enabled`);
   console.log(`🔒 Security: Helmet enabled, Rate limiting active`);
   console.log('='.repeat(70));
   

@@ -22,4 +22,12 @@ router.get('/me', auth, userLimiter, userController.getMe);
  */
 router.put('/me', auth, userLimiter, validateProfileUpdate, userController.updateMe);
 
+/**
+ * @route   GET /api/user/api-token
+ * @desc    Get or generate API token for widget authentication
+ * @access  Protected (requires JWT)
+ * @query   { regenerate?: boolean }
+ */
+router.get('/api-token', auth, userLimiter, userController.getApiToken);
+
 module.exports = router;

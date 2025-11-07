@@ -1,0 +1,512 @@
+/* src/styles/WidgetInstaller.css */
+
+.widget-installer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(7, 10, 18, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5em;
+  z-index: 2000;
+  overflow-y: auto;
+}
+
+.widget-installer-modal {
+  width: 100%;
+  max-width: 720px;
+  background: #20293c;
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-installer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.8em 2em;
+  border-bottom: 1px solid rgba(255, 131, 7, 0.2);
+}
+
+.widget-installer-header h3 {
+  margin: 0;
+  color: #FF8307;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.widget-installer-close {
+  background: transparent;
+  border: none;
+  color: #b5bdc9;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.widget-installer-close:hover {
+  background: rgba(255, 131, 7, 0.1);
+  color: #FF8307;
+}
+
+.widget-installer-content {
+  padding: 2em;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.widget-installer-description {
+  color: #b5bdc9;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-description code {
+  background: rgba(255, 131, 7, 0.15);
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  color: #FF8307;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.widget-installer-user-info {
+  background: rgba(109, 212, 126, 0.08);
+  border: 1px solid rgba(109, 212, 126, 0.25);
+  border-radius: 12px;
+  padding: 1.2em;
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-user-info p {
+  margin: 0.4em 0;
+  color: #e0e5ec;
+  font-size: 0.95rem;
+}
+
+.widget-installer-user-info strong {
+  color: #6dd47e;
+}
+
+.widget-installer-user-info code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  color: #a8e6cf;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.widget-installer-snippet-container {
+  position: relative;
+  margin-bottom: 1.8em;
+}
+
+.widget-installer-snippet {
+  background: #181f2a;
+  border: 1px solid rgba(255, 131, 7, 0.3);
+  border-radius: 12px;
+  padding: 1.5em;
+  color: #e0e5ec;
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.widget-installer-copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #FF8307;
+  color: #fff;
+  border: none;
+  padding: 0.6em 1.2em;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(255, 131, 7, 0.3);
+}
+
+.widget-installer-copy-btn:hover {
+  background: #e67506;
+  box-shadow: 0 6px 18px rgba(255, 131, 7, 0.45);
+  transform: translateY(-2px);
+}
+
+.widget-installer-copy-btn.copied {
+  background: #6dd47e;
+  box-shadow: 0 4px 12px rgba(109, 212, 126, 0.3);
+}
+
+.widget-installer-instructions {
+  background: rgba(255, 131, 7, 0.06);
+  border-left: 4px solid #FF8307;
+  border-radius: 8px;
+  padding: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-instructions h4 {
+  margin: 0 0 1em 0;
+  color: #FF8307;
+  font-size: 1.1rem;
+}
+
+.widget-installer-instructions ol {
+  margin: 0;
+  padding-left: 1.5em;
+  color: #d3d9e5;
+}
+
+.widget-installer-instructions li {
+  margin-bottom: 0.7em;
+  line-height: 1.5;
+}
+
+.widget-installer-instructions code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  color: #ffb366;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.widget-installer-features {
+  background: rgba(75, 85, 235, 0.08);
+  border: 1px solid rgba(75, 85, 235, 0.25);
+  border-radius: 12px;
+  padding: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-features h4 {
+  margin: 0 0 1em 0;
+  color: #8b93ff;
+  font-size: 1.1rem;
+}
+
+.widget-installer-features ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #d3d9e5;
+  list-style: none;
+}
+
+.widget-installer-features li {
+  margin-bottom: 0.6em;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 0.3em;
+}
+
+.widget-installer-preview-section {
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-preview-btn {
+  background: #2b3547;
+  color: #f1f1f1;
+  border: 1px solid rgba(255, 131, 7, 0.3);
+  padding: 0.8em 1.5em;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.widget-installer-preview-btn:hover {
+  background: #353f52;
+  border-color: #FF8307;
+  color: #FF8307;
+}
+
+.widget-installer-preview {
+  margin-top: 1.2em;
+}
+
+.widget-installer-preview-label {
+  color: #b5bdc9;
+  font-size: 0.9rem;
+  margin-bottom: 0.8em;
+  font-style: italic;
+}
+
+.widget-installer-preview-frame {
+  background: #f5f5f5;
+  border-radius: 12px;
+  padding: 1.5em;
+  min-height: 300px;
+  position: relative;
+}
+
+.widget-installer-preview-site {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  min-height: 250px;
+}
+
+.preview-site-header {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.preview-site-content {
+  color: #666;
+  line-height: 1.6;
+}
+
+.preview-widget-placeholder {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #FF8307, #e67506);
+  color: white;
+  padding: 0.8em 1.2em;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  box-shadow: 0 4px 16px rgba(255, 131, 7, 0.4);
+  cursor: pointer;
+  animation: pulse-widget 2s ease-in-out infinite;
+}
+
+@keyframes pulse-widget {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(255, 131, 7, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 131, 7, 0.6);
+  }
+}
+
+.preview-widget-icon {
+  font-size: 1.3rem;
+}
+
+.preview-widget-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.widget-installer-notes {
+  background: rgba(255, 74, 85, 0.08);
+  border: 1px solid rgba(255, 74, 85, 0.25);
+  border-radius: 12px;
+  padding: 1.5em;
+  margin-bottom: 0;
+}
+
+.widget-installer-notes h4 {
+  margin: 0 0 1em 0;
+  color: #ff9999;
+  font-size: 1.1rem;
+}
+
+.widget-installer-notes ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #d3d9e5;
+  list-style: none;
+}
+
+.widget-installer-notes li {
+  margin-bottom: 0.7em;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 0.3em;
+}
+
+.widget-installer-notes strong {
+  color: #ffb3b3;
+}
+
+.widget-installer-error {
+  padding: 2em;
+  text-align: center;
+}
+
+.widget-installer-error p {
+  color: #ff4a55;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.widget-installer-actions {
+  display: flex;
+  gap: 1em;
+  padding: 1.5em 2em;
+  border-top: 1px solid rgba(255, 131, 7, 0.2);
+  flex-wrap: wrap;
+}
+
+.widget-installer-btn-primary,
+.widget-installer-btn-neutral {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.9em 1.2em;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.widget-installer-btn-primary {
+  background: #FF8307;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 131, 7, 0.25);
+}
+
+.widget-installer-btn-primary:hover {
+  background: #e67506;
+  box-shadow: 0 6px 18px rgba(255, 131, 7, 0.4);
+  transform: translateY(-2px);
+}
+
+.widget-installer-btn-neutral {
+  background: #2b3547;
+  color: #f1f1f1;
+}
+
+.widget-installer-btn-neutral:hover {
+  background: #353f52;
+}
+
+/* Loading and error states */
+.widget-installer-loading,
+.widget-installer-error {
+  padding: 3em 2em;
+  text-align: center;
+}
+
+.widget-installer-loading p {
+  color: #b5bdc9;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.widget-installer-error {
+  background: rgba(255, 74, 85, 0.08);
+  border: 1px solid rgba(255, 74, 85, 0.25);
+  border-radius: 12px;
+  margin: 2em;
+}
+
+.widget-installer-error p {
+  color: #ff9999;
+  font-size: 1rem;
+  margin: 0 0 1em 0;
+}
+
+.widget-installer-retry-btn {
+  background: #FF8307;
+  color: #fff;
+  border: none;
+  padding: 0.8em 1.5em;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1em;
+}
+
+.widget-installer-retry-btn:hover {
+  background: #e67506;
+  transform: translateY(-2px);
+}
+
+/* Security notice */
+.widget-installer-security-notice {
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 10px;
+  padding: 1em 1.2em;
+  margin-bottom: 1.5em;
+}
+
+.widget-installer-security-notice p {
+  margin: 0;
+  color: #ffd54f;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.widget-installer-security-notice strong {
+  color: #ffeb3b;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .widget-installer-modal {
+    max-width: 100%;
+    max-height: 95vh;
+    margin: 1em;
+  }
+
+  .widget-installer-header {
+    padding: 1.2em 1.5em;
+  }
+
+  .widget-installer-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .widget-installer-content {
+    padding: 1.5em;
+  }
+
+  .widget-installer-snippet {
+    font-size: 0.8rem;
+    padding: 1em;
+  }
+
+  .widget-installer-copy-btn {
+    position: static;
+    width: 100%;
+    margin-top: 0.8em;
+  }
+
+  .widget-installer-actions {
+    flex-direction: column;
+  }
+
+  .widget-installer-btn-primary,
+  .widget-installer-btn-neutral {
+    width: 100%;
+  }
+}

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
 import UserForm from '../components/users/UserForm';
 import Loader from '../components/Loader';
+import WidgetInstaller from '../components/WidgetInstaller';
 
 import '../styles/index.css';
 
@@ -26,6 +27,7 @@ function DashboardPage() {
   const [statusMessage, setStatusMessage] = useState('');
   const [scrapeError, setScrapeError] = useState('');
   const [jobResult, setJobResult] = useState(null);
+  const [isWidgetInstallerOpen, setWidgetInstallerOpen] = useState(false);
 
   const summaryJobId = jobResult?.summary
     ? jobResult.summary.jobId || jobResult.jobId || null
@@ -347,6 +349,12 @@ function DashboardPage() {
             >
               🧹 {isUser ? 'Update My Knowledge Base' : 'Run Scrape & Update'}
             </button>
+            <button
+              className="dashboard-action-btn dashboard-action-btn--widget"
+              onClick={() => setWidgetInstallerOpen(true)}
+            >
+              🚀 Install Chatbot on Your Site
+            </button>
           </section>
         </>
       ) : (
@@ -469,6 +477,12 @@ function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Widget Installer Modal */}
+      <WidgetInstaller 
+        isOpen={isWidgetInstallerOpen}
+        onClose={() => setWidgetInstallerOpen(false)}
+      />
     </div>
   );
 }

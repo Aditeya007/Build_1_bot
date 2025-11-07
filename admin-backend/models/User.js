@@ -96,6 +96,13 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    apiToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      index: true
+    },
     // lastLogin: { 
     //   type: Date 
     // },
@@ -157,9 +164,24 @@ UserSchema.methods.toPublicProfile = function() {
     ...(this.role === 'admin' && { vectorStorePath: this.vectorStorePath }),
     ...(this.role === 'user' && this.adminId && { adminId: this.adminId }),
     role: this.role,
+    apiToken: this.apiToken,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
+};
+
+// Instance method to generate API token for widget authentication
+UserSchema.methods.generateApiToken = function() {
+  const crypto = require('crypto');
+  // Generate a secure random token
+  const token = crypto.randomBytes(32).toString('hex');
+  this.apiToken = token;
+  return token;
+};
+
+// Static method to find user by API token
+UserSchema.statics.findByApiToken = function(apiToken) {
+  return this.findOne({ apiToken });
 };
 
 // Static method to find user by email or username

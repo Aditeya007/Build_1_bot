@@ -56,4 +56,12 @@ router.put('/:id', validateUpdateUser, userController.updateUser);
  */
 router.delete('/:id', userController.deleteUser);
 
+/**
+ * @route   GET /api/users/:id/api-token
+ * @desc    Get or generate API token for a user (for widget authentication)
+ * @access  Protected (admin only)
+ * @query   { regenerate?: boolean }
+ */
+router.get('/:id/api-token', userController.getUserApiToken);
+
 module.exports = router;

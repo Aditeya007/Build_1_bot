@@ -94,3 +94,7 @@ coverage/
 *.bak
 *.backup
 .cache/
+
+test.html
+widget-test.html
+widget.html

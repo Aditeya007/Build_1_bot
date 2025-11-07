@@ -338,6 +338,16 @@ label {
   box-shadow: 0 6px 20px rgba(255, 131, 7, 0.4);
 }
 
+.dashboard-action-btn--widget {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.dashboard-action-btn--widget:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
 /* Scrape modal */
 .scrape-modal-overlay {
   position: fixed;
