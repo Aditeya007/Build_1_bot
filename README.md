@@ -122,31 +122,6 @@ Open these in your browser:
 
 ---
 
-## 🌐 For Production (Server Deployment)
-
-Update your `.env` file:
-
-```env
-# Change to production
-NODE_ENV=production
-
-# Use cloud MongoDB (recommended: MongoDB Atlas)
-MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/database
-MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/database
-
-# Update URLs to your server domain
-FASTAPI_BOT_URL=https://yourdomain.com:8000
-CORS_ORIGIN=https://yourdomain.com
-
-# Generate NEW secrets for production
-JWT_SECRET=production_secret_here
-FASTAPI_SHARED_SECRET=production_secret_here
-
-# System Python path
-PYTHON_BIN=/usr/bin/python3
-```
-
----
 
 ## 💡 Tips
 
@@ -169,4 +144,3 @@ PYTHON_BIN=/usr/bin/python3
 **Missing JWT_SECRET error?**
 - Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - Add to `.env` file
-
