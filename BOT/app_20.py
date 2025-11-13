@@ -1838,6 +1838,8 @@ async def mark_data_updated(
 
 
 if __name__ == "__main__":
+    import sys
+    
     print("\n" + "="*90)
     print("🚀 STARTING RAG CHATBOT - WITH MONGODB LEAD STORAGE")
     print("="*90)
@@ -1848,4 +1850,23 @@ if __name__ == "__main__":
     print("  ✅ UTC timestamps for all records")
     print("  ✅ Enhanced lead management endpoints")
     print("="*90)
-    uvicorn.run("app_20:app", host="0.0.0.0", port=8000, reload=True)
+    
+    # Detect environment mode
+    env_mode = os.getenv("NODE_ENV", "development").lower()
+    port = int(os.getenv("FASTAPI_PORT", "8000"))
+    
+    if env_mode == "production":
+        print("🌐 RUNNING IN PRODUCTION MODE")
+        print(f"  - Host: 0.0.0.0")
+        print(f"  - Port: {port}")
+        print(f"  - Auto-reload: DISABLED")
+        print(f"  - Recommended: Use Gunicorn - gunicorn app_20:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:{port}")
+        print("="*90)
+        uvicorn.run("app_20:app", host="0.0.0.0", port=port, reload=False, log_level="info")
+    else:
+        print("🔧 RUNNING IN DEVELOPMENT MODE")
+        print(f"  - Host: 0.0.0.0")
+        print(f"  - Port: {port}")
+        print(f"  - Auto-reload: ENABLED")
+        print("="*90)
+        uvicorn.run("app_20:app", host="0.0.0.0", port=port, reload=True)

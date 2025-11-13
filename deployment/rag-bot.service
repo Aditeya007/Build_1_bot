@@ -1,0 +1,22 @@
+[Unit]
+Description=RAG Chatbot FastAPI Bot Service
+After=network.target mongodb.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rag-chatbot/BOT
+Environment="PATH=/var/www/rag-chatbot/venv/bin"
+EnvironmentFile=/var/www/rag-chatbot/.env
+ExecStart=/var/www/rag-chatbot/venv/bin/gunicorn app_20:app \
+    -w 4 \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000 \
+    --access-logfile /var/log/rag-bot/access.log \
+    --error-logfile /var/log/rag-bot/error.log
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

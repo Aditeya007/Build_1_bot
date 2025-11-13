@@ -122,6 +122,43 @@ Open these in your browser:
 
 ---
 
+## 🌐 Production Deployment
+
+Ready to deploy to a live server? See the comprehensive deployment guide:
+
+**📖 [DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete production deployment guide
+
+### Validate Your Configuration
+
+Before deploying, validate your `.env` file:
+
+```bash
+node deployment/validate-env.js
+```
+
+This checks for common configuration issues and security concerns.
+
+### Quick Deploy
+
+For quick production setup on your server:
+
+```bash
+# Make setup script executable
+chmod +x deployment/setup.sh
+
+# Run interactive setup
+./deployment/setup.sh
+```
+
+The deployment includes:
+- Automatic environment detection (dev/production)
+- Nginx reverse proxy configuration
+- SSL/HTTPS setup with Let's Encrypt
+- PM2 process management for Node.js
+- Systemd service for FastAPI bot
+- Production optimizations
+
+---
 
 ## 💡 Tips
 
@@ -129,6 +166,7 @@ Open these in your browser:
 - Only one `.env` file needed (in the root folder)
 - Make sure MongoDB is running before starting services
 - Each service needs its own terminal window
+- For production, set `NODE_ENV=production` in `.env`
 
 ---
 
