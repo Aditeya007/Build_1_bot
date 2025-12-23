@@ -233,6 +233,10 @@ You should see `rag-backend` with status `online`.
 
 ## 🤖 Step 9: Start the AI Bot Service
 
+**IMPORTANT:** The bot uses `run_bot_with_autorestart.py` which automatically restarts the bot after scrapes to ensure fresh database connections.
+
+### Option A: Production with Systemd (Recommended)
+
 Create a system service for the Python bot:
 
 ```bash
@@ -244,12 +248,7 @@ sudo chown www-data:www-data /var/log/rag-bot
 sudo cp deployment/rag-bot.service /etc/systemd/system/
 ```
 
-**Note:** The service file is already configured to run as `www-data` (the standard web service user). If you deployed to a different path than `/var/www/rag-chatbot`, edit the file:
-
-```bash
-sudo nano /etc/systemd/system/rag-bot.service
-# Update WorkingDirectory and EnvironmentFile paths if needed
-```
+**Note:** The service file runs with Gunicorn which handles worker restarts automatically. For production with Gunicorn, this is the recommended approach.
 
 Start the service:
 
@@ -261,6 +260,18 @@ sudo systemctl status rag-bot
 ```
 
 You should see `active (running)` in green.
+
+### Option B: Development with Auto-Restart Wrapper
+
+For development/testing environments, use the auto-restart wrapper instead:
+
+```bash
+cd /var/www/rag-chatbot
+source venv/bin/activate
+python run_bot_with_autorestart.py
+```
+
+This will automatically restart the bot after each scrape completes, ensuring fresh database connections without manual intervention.
 
 ---
 
@@ -459,11 +470,17 @@ cd admin-frontend
 npm install
 npm run build
 
-# Restart services
+# Update Python dependencies
 cd ..
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Restart services
 pm2 restart rag-backend
 sudo systemctl restart rag-bot
 ```
+
+**Note:** If using the auto-restart wrapper (Option B), stop it with Ctrl+C and restart with `python run_bot_with_autorestart.py`
 
 ---
 
