@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../config';
  * @returns {Promise<Object>} Response data
  * @throws {Error} API error with message
  */
-export async function apiRequest(endpoint, { method = 'GET', token, data, ...custom } = {}) {
+export async function apiRequest(endpoint, { method = 'GET', token, data, params, ...custom } = {}) {
   const headers = {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -22,8 +22,17 @@ export async function apiRequest(endpoint, { method = 'GET', token, data, ...cus
     ...custom,
   };
 
+  // Build URL with query params for GET requests
+  let url = `${API_BASE_URL}${endpoint}`;
+  if (params && typeof params === 'object') {
+    const queryString = new URLSearchParams(params).toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    const res = await fetch(url, options);
     
     // Parse response
     let result;

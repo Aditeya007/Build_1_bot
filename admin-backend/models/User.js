@@ -92,6 +92,33 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
+    // Scheduler-related fields for per-tenant persistent scheduling
+    schedulerPid: {
+      type: Number,
+      default: null
+    },
+    schedulerStatus: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'inactive'
+    },
+    schedulerConfig: {
+      type: {
+        intervalMinutes: {
+          type: Number,
+          default: 5
+        },
+        startUrl: String,
+        lastStarted: Date,
+        lastStopped: Date,
+        lastScrapeCompleted: Date,
+        botReady: {
+          type: Boolean,
+          default: false
+        }
+      },
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true
@@ -165,6 +192,10 @@ UserSchema.methods.toPublicProfile = function() {
     ...(this.role === 'user' && this.adminId && { adminId: this.adminId }),
     role: this.role,
     apiToken: this.apiToken,
+    // Scheduler status fields
+    schedulerPid: this.schedulerPid,
+    schedulerStatus: this.schedulerStatus,
+    schedulerConfig: this.schedulerConfig,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };

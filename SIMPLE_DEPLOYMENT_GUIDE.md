@@ -122,6 +122,13 @@ MONGO_URI=mongodb://localhost:27017/rag_chatbot_prod
 JWT_SECRET=paste_first_generated_secret_here
 FASTAPI_SHARED_SECRET=paste_second_generated_secret_here
 
+# Service secret for scheduler (use SAME value as FASTAPI_SHARED_SECRET)
+SERVICE_SECRET=paste_second_generated_secret_here
+
+# Scheduler configuration - URLs for bot notification after scraping
+BOT_URL=https://mychatbot.com/bot
+ADMIN_BACKEND_URL=https://mychatbot.com/api
+
 # Your Google API Key
 GOOGLE_API_KEY=your_google_api_key_here
 

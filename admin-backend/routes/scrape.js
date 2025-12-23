@@ -9,4 +9,12 @@ const scrapeController = require('../controllers/scrapeController');
 router.post('/run', auth, resolveTenant, scrapeLimiter, validateScrapeRequest, scrapeController.startScrape);
 router.post('/update', auth, resolveTenant, scrapeLimiter, validateScrapeRequest, scrapeController.runUpdater);
 
+// Scheduler routes
+router.post('/scheduler/start', auth, resolveTenant, validateScrapeRequest, scrapeController.startScheduler);
+router.post('/scheduler/stop', auth, resolveTenant, scrapeController.stopScheduler);
+router.get('/scheduler/status', auth, resolveTenant, scrapeController.getSchedulerStatus);
+
+// Internal endpoint for scheduler to notify scrape completion (uses service secret instead of auth)
+router.post('/scheduler/scrape-complete', scrapeController.notifyScrapeComplete);
+
 module.exports = router;

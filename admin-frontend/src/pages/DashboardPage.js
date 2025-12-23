@@ -1,6 +1,6 @@
 // src/pages/DashboardPage.js
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
@@ -29,6 +29,13 @@ function DashboardPage() {
   const [jobResult, setJobResult] = useState(null);
   const [isWidgetInstallerOpen, setWidgetInstallerOpen] = useState(false);
 
+  // Scheduler state
+  const [useScheduler, setUseScheduler] = useState(false); // Toggle for immediate vs scheduled
+  const [schedulerStatus, setSchedulerStatus] = useState('inactive');
+  const [schedulerConfig, setSchedulerConfig] = useState(null);
+  const [schedulerLoading, setSchedulerLoading] = useState(false);
+  const [schedulerError, setSchedulerError] = useState('');
+
   const summaryJobId = jobResult?.summary
     ? jobResult.summary.jobId || jobResult.jobId || null
     : null;
@@ -51,6 +58,37 @@ function DashboardPage() {
       setTenantDetails(user);
     }
   }, [user, activeTenant, setActiveTenant]);
+
+  // Fetch scheduler status
+  const fetchSchedulerStatus = useCallback(async () => {
+    if (!token || !tenantDetails) return;
+    
+    try {
+      const tenantUserId = tenantDetails.id || tenantDetails._id;
+      const response = await apiRequest('/scrape/scheduler/status', {
+        method: 'GET',
+        token,
+        params: { tenantUserId }
+      });
+      
+      if (response.success) {
+        setSchedulerStatus(response.schedulerStatus || 'inactive');
+        setSchedulerConfig(response.schedulerConfig);
+      }
+    } catch (err) {
+      console.error('Failed to fetch scheduler status:', err);
+      // Don't show error to user, just use default inactive state
+    }
+  }, [token, tenantDetails]);
+
+  // Fetch scheduler status when tenant details change
+  useEffect(() => {
+    fetchSchedulerStatus();
+    
+    // Also poll every 30 seconds to keep status fresh
+    const interval = setInterval(fetchSchedulerStatus, 30000);
+    return () => clearInterval(interval);
+  }, [fetchSchedulerStatus]);
 
   useEffect(() => {
     if (!token) {
@@ -147,6 +185,8 @@ function DashboardPage() {
     setStatusMessage('');
     setScrapeError('');
     setJobResult(null);
+    setUseScheduler(false); // Reset to immediate execution
+    setSchedulerError('');
     setScrapeModalOpen(true);
   }
 
@@ -180,27 +220,86 @@ function DashboardPage() {
     }
 
     setScrapeError('');
-    setStatusMessage('Launching updater. This may take a while depending on site size...');
+    setSchedulerError('');
     setProcessing(true);
     setJobResult(null);
 
     try {
-      const response = await apiRequest('/scrape/update', {
-        method: 'POST',
-        token,
-        data: {
-          startUrl: normalizedUrl,
-          tenantUserId: tenantDetails.id || tenantDetails._id
-        }
-      });
+      const tenantUserId = tenantDetails.id || tenantDetails._id;
 
-      setStatusMessage('✅ Scraping completed successfully. You can now interact with the bot using the refreshed knowledge base.');
-      setJobResult(response);
+      // If not using scheduler, run immediately via existing endpoint
+      if (!useScheduler) {
+        setStatusMessage('Launching updater. This may take a while depending on site size...');
+        
+        const response = await apiRequest('/scrape/update', {
+          method: 'POST',
+          token,
+          data: {
+            startUrl: normalizedUrl,
+            tenantUserId
+          }
+        });
+
+        setStatusMessage('✅ Scraping completed successfully. You can now interact with the bot using the refreshed knowledge base.');
+        setJobResult(response);
+      } else {
+        // Start a scheduled updater (runs every 5 minutes)
+        setStatusMessage('Starting scheduler (runs every 5 minutes)...');
+        
+        const response = await apiRequest('/scrape/scheduler/start', {
+          method: 'POST',
+          token,
+          data: {
+            startUrl: normalizedUrl,
+            tenantUserId
+          }
+        });
+
+        if (response.success) {
+          setStatusMessage('✅ Scheduler started! Your knowledge base will be updated every 5 minutes.');
+          setSchedulerStatus('active');
+          setSchedulerConfig(response.schedulerConfig);
+          setJobResult({ summary: { status: 'scheduled', ...response.schedulerConfig } });
+        } else {
+          throw new Error(response.error || 'Failed to start scheduler');
+        }
+      }
     } catch (err) {
-      setScrapeError(err.message || 'Scrape failed. Please try again later.');
+      setScrapeError(err.message || 'Operation failed. Please try again later.');
       setStatusMessage('');
     } finally {
       setProcessing(false);
+    }
+  }
+
+  async function handleStopScheduler() {
+    if (!tenantDetails || !token) {
+      setSchedulerError('No user selected or session expired.');
+      return;
+    }
+
+    setSchedulerLoading(true);
+    setSchedulerError('');
+
+    try {
+      const tenantUserId = tenantDetails.id || tenantDetails._id;
+      const response = await apiRequest('/scrape/scheduler/stop', {
+        method: 'POST',
+        token,
+        data: { tenantUserId }
+      });
+
+      if (response.success) {
+        setSchedulerStatus('inactive');
+        // Refresh scheduler config
+        fetchSchedulerStatus();
+      } else {
+        throw new Error(response.error || 'Failed to stop scheduler');
+      }
+    } catch (err) {
+      setSchedulerError(err.message || 'Failed to stop scheduler.');
+    } finally {
+      setSchedulerLoading(false);
     }
   }
 
@@ -299,13 +398,113 @@ function DashboardPage() {
       ) : hasProvisionedTenant ? (
         <>
           <section className="dashboard-info">
-            <h3>{isAdmin ? `Provisioned Resources for ${tenantDetails.name}` : 'Your Resources'}</h3>
+            <h3>
+              {isAdmin ? `Provisioned Resources for ${tenantDetails.name}` : 'Your Resources'}
+            </h3>
             <p className="dashboard-subtitle">
               {isAdmin 
                 ? 'The infrastructure below was created when the user was provisioned.'
                 : 'Your personalized chatbot infrastructure and knowledge base.'
               }
             </p>
+            
+            {/* Scheduler Management Section - Always Visible */}
+            <div style={{
+              padding: '1rem',
+              background: schedulerStatus === 'active' ? '#ecfdf5' : '#f3f4f6',
+              border: `1px solid ${schedulerStatus === 'active' ? '#10b981' : '#d1d5db'}`,
+              borderRadius: '8px',
+              marginBottom: '1rem'
+            }}>
+              <h4 style={{ margin: '0 0 0.75rem 0', color: schedulerStatus === 'active' ? '#065f46' : '#374151' }}>
+                📅 Scheduler Management
+                {schedulerStatus === 'active' && (
+                  <span style={{
+                    marginLeft: '0.75rem',
+                    padding: '0.25rem 0.5rem',
+                    background: '#10b981',
+                    color: 'white',
+                    borderRadius: '1rem',
+                    fontSize: '0.7rem',
+                    fontWeight: '500'
+                  }}>
+                    🟢 RUNNING
+                  </span>
+                )}
+              </h4>
+              
+              {schedulerStatus === 'active' ? (
+                <>
+                  <p style={{ margin: '0.25rem 0', fontSize: '0.875rem' }}>
+                    <strong>Interval:</strong> Every {schedulerConfig?.intervalMinutes || 5} minutes
+                  </p>
+                  {schedulerConfig?.startUrl && (
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.875rem' }}>
+                      <strong>URL:</strong> {schedulerConfig.startUrl}
+                    </p>
+                  )}
+                  {schedulerConfig?.lastStarted && (
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                      <strong>Started:</strong> {new Date(schedulerConfig.lastStarted).toLocaleString()}
+                    </p>
+                  )}
+                  {schedulerConfig?.lastScrapeCompleted && (
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#059669' }}>
+                      <strong>Last Scrape:</strong> {new Date(schedulerConfig.lastScrapeCompleted).toLocaleString()}
+                    </p>
+                  )}
+                  {schedulerConfig?.botReady && (
+                    <div style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem 0.75rem',
+                      background: '#d1fae5',
+                      border: '1px solid #10b981',
+                      borderRadius: '4px',
+                      color: '#065f46',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}>
+                      ✅ Bot is ready to use with updated knowledge base!
+                    </div>
+                  )}
+                  <button
+                    onClick={handleStopScheduler}
+                    disabled={schedulerLoading}
+                    style={{
+                      marginTop: '0.75rem',
+                      padding: '0.5rem 1rem',
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: schedulerLoading ? 'not-allowed' : 'pointer',
+                      opacity: schedulerLoading ? 0.6 : 1,
+                      fontWeight: '500'
+                    }}
+                  >
+                    {schedulerLoading ? 'Stopping...' : '🛑 Stop Scheduler'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                    No scheduler is currently running. Use "Update Knowledge Base" and enable the scheduler option to start automatic updates.
+                  </p>
+                  {schedulerConfig?.lastStopped && (
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#9ca3af' }}>
+                      <strong>Last stopped:</strong> {new Date(schedulerConfig.lastStopped).toLocaleString()}
+                    </p>
+                  )}
+                </>
+              )}
+              
+              {schedulerError && (
+                <p style={{ color: '#ef4444', margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>
+                  {schedulerError}
+                </p>
+              )}
+            </div>
+
             <table className="dashboard-table">
               <tbody>
                 <tr>
@@ -419,12 +618,41 @@ function DashboardPage() {
               disabled={isProcessing}
             />
 
+            {/* Schedule Options */}
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={useScheduler}
+                  onChange={(event) => setUseScheduler(event.target.checked)}
+                  disabled={isProcessing}
+                  style={{ width: '1.25rem', height: '1.25rem' }}
+                />
+                <span>Enable automatic updates (every 5 minutes)</span>
+              </label>
+
+              {useScheduler && (
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem', marginLeft: '1.75rem' }}>
+                  ℹ️ The scheduler will run in the background and update your knowledge base every 5 minutes.
+                </p>
+              )}
+            </div>
+
             {statusMessage && (
               <p className="scrape-status">{statusMessage}</p>
             )}
 
             {scrapeError && (
               <p className="scrape-error">{scrapeError}</p>
+            )}
+
+            {schedulerError && (
+              <p className="scrape-error">{schedulerError}</p>
             )}
 
             {isProcessing && (
@@ -471,7 +699,7 @@ function DashboardPage() {
                 onClick={handleScrape}
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Running...' : 'Start Scrape'}
+                {isProcessing ? 'Running...' : useScheduler ? 'Start Scheduler' : 'Start Scrape'}
               </button>
             </div>
           </div>
