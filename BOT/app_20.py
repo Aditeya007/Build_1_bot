@@ -7,7 +7,7 @@ from typing import Any, List, Dict, Tuple, Optional
 import asyncio
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Request, Depends
+from fastapi import FastAPI, HTTPException, Query, Request, Depends, BackgroundTasks
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import uvicorn
@@ -401,7 +401,7 @@ class SemanticIntelligentRAG:
         This is necessary because ChromaDB aggressively caches collection data in memory.
         """
         try:
-            print(f"� NUCLEAR RELOAD: Forcing ChromaDB to re-read from disk for resource: {self.resource_id}")
+            print(f" NUCLEAR RELOAD: Forcing ChromaDB to re-read from disk for resource: {self.resource_id}")
             
             # Step 1: Close old client completely
             try:
@@ -1314,7 +1314,7 @@ class TenantChatbotManager:
         if force_reload:
             async with self._lock:
                 if cache_key in self._instances:
-                    print(f"� Force destroying chatbot instance for {resource_id or resolved_path}")
+                    print(f" Force destroying chatbot instance for {resource_id or resolved_path}")
                     old_instance = self._instances[cache_key]
                     
                     # Close MongoDB
@@ -1398,7 +1398,7 @@ class TenantChatbotManager:
 
         async with self._lock:
             if cache_key in self._instances:
-                print(f"� DESTROYING cached chatbot instance: {cache_key}")
+                print(f" DESTROYING cached chatbot instance: {cache_key}")
                 instance = self._instances[cache_key]
                 
                 # Close MongoDB connection
@@ -1836,6 +1836,32 @@ async def mark_data_updated(
         print(f"❌ Failed to mark data updated: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to mark data updated: {str(e)}")
 
+# =========================================================================
+# HARD RESTART ENDPOINT - ADDED FIX FOR CACHING ISSUES
+# =========================================================================
+@app.post("/system/restart", dependencies=[Depends(require_service_secret)])
+async def system_restart(background_tasks: BackgroundTasks):
+    """
+    NUCLEAR OPTION: Hard restart the bot worker process.
+    This terminates the process with exit code 1.
+    Gunicorn/Systemd will automatically respawn a fresh worker.
+    This is the only 100% reliable way to clear ChromaDB file locks/caches.
+    """
+    def kill_process():
+        import time
+        import os
+        print(f"💀 HARD RESTART TRIGGERED: Terminating worker process {os.getpid()}...")
+        time.sleep(1)  # Give time for the response to leave
+        os._exit(1)    # Force immediate exit
+
+    # Schedule the kill to happen after the response is sent
+    background_tasks.add_task(kill_process)
+    
+    return {
+        "status": "restarting", 
+        "message": "Bot worker terminating in 1s to force data reload",
+        "pid": os.getpid()
+    }
 
 if __name__ == "__main__":
     import sys
@@ -1855,12 +1881,17 @@ if __name__ == "__main__":
     env_mode = os.getenv("NODE_ENV", "development").lower()
     port = int(os.getenv("FASTAPI_PORT", "8000"))
     
-    if env_mode == "production":
-        print("🌐 RUNNING IN PRODUCTION MODE")
+    # Check if running with auto-restart wrapper (disables uvicorn reload to allow proper restart)
+    auto_restart_mode = os.getenv("BOT_AUTO_RESTART", "").lower() in ("1", "true", "yes")
+    
+    if env_mode == "production" or auto_restart_mode:
+        mode_label = "PRODUCTION" if env_mode == "production" else "AUTO-RESTART"
+        print(f"🌐 RUNNING IN {mode_label} MODE")
         print(f"  - Host: 0.0.0.0")
         print(f"  - Port: {port}")
-        print(f"  - Auto-reload: DISABLED")
-        print(f"  - Recommended: Use Gunicorn - gunicorn app_20:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:{port}")
+        print(f"  - Auto-reload: DISABLED (restarts handled externally)")
+        if env_mode == "production":
+            print(f"  - Recommended: Use Gunicorn - gunicorn app_20:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:{port}")
         print("="*90)
         uvicorn.run("app_20:app", host="0.0.0.0", port=port, reload=False, log_level="info")
     else:

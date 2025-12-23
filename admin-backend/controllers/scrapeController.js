@@ -9,65 +9,39 @@ const buildJobId = (prefix, resourceId) => {
 };
 
 /**
- * Reload bot vector store immediately after scraping/updating (NO RESTART NEEDED!)
- * This triggers an immediate reload of the ChromaDB collection from disk, making new data
- * available in bot responses right away without restarting the Python process.
+ * Wait for bot to come back online after restart
  * 
- * @param {Object} tenantContext - Tenant context with botEndpoint, resourceId, vectorStorePath, etc.
- * @returns {Promise<Object>} Result with success status, document count, and message
+ * @param {Object} tenantContext - Tenant context with botEndpoint
+ * @param {number} maxWaitMs - Maximum time to wait (default 30 seconds)
+ * @returns {Promise<Object>} Result with success status
  */
-const refreshBotCache = async (tenantContext) => {
-  try {
-    const botEndpoint = tenantContext.botEndpoint || process.env.FASTAPI_BOT_URL || 'http://localhost:8000';
-    const sharedSecret = process.env.FASTAPI_SHARED_SECRET;
-    
-    // Use the NEW /reload_vectors endpoint for IMMEDIATE reload
-    const reloadUrl = `${botEndpoint}/reload_vectors`;
-    const params = {
-      resource_id: tenantContext.resourceId,
-      vector_store_path: tenantContext.vectorStorePath,
-      database_uri: tenantContext.databaseUri
-    };
-
-    console.log(`� Triggering IMMEDIATE vector store reload for resource: ${tenantContext.resourceId}`);
-    console.log(`   This will reload ChromaDB from disk WITHOUT restarting the bot!`);
-    
-    const response = await axios.post(reloadUrl, null, {
-      params,
-      headers: sharedSecret ? { 'X-Service-Secret': sharedSecret } : {},
-      timeout: 10000 // 10 second timeout (reload can take a moment)
-    });
-
-    if (response.data && response.data.status === 'success') {
-      const docCount = response.data.document_count;
-      const action = response.data.action_taken;
-      
-      console.log(`✅ Vector store reload successful!`);
-      console.log(`   Action: ${action}`);
-      if (docCount !== undefined) {
-        console.log(`   Document count: ${docCount}`);
+const waitForBotRestart = async (tenantContext, maxWaitMs = 30000) => {
+  // Use base bot URL, not the tenant-specific endpoint
+  const botBaseUrl = process.env.FASTAPI_BOT_URL || 'http://localhost:8000';
+  const startTime = Date.now();
+  const pollInterval = 2000; // Check every 2 seconds
+  
+  console.log(`⏳ Waiting for bot to restart and come back online...`);
+  
+  // Wait a moment for the restart to actually begin
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const response = await axios.get(`${botBaseUrl}/health`, { timeout: 2000 });
+      if (response.status === 200) {
+        console.log(`✅ Bot is back online! Ready to serve new data.`);
+        return { success: true, message: 'Bot restarted successfully' };
       }
-      console.log(`   Bot will now answer with latest data (old + new)!`);
-      
-      return { 
-        success: true, 
-        message: response.data.message,
-        documentCount: docCount,
-        actionTaken: action
-      };
-    } else {
-      console.warn('⚠️  Vector reload returned unexpected response:', response.data);
-      return { success: false, error: 'Unexpected response from bot service' };
+    } catch (err) {
+      // Bot still restarting, continue waiting
+      console.log(`   Bot not ready yet, waiting...`);
     }
-  } catch (err) {
-    console.error('❌ Failed to reload vectors:', err.message);
-    if (err.response) {
-      console.error('   Response status:', err.response.status);
-      console.error('   Response data:', err.response.data);
-    }
-    // Don't fail the scrape job if reload fails - data is still saved
-    return { success: false, error: err.message };
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
   }
+  
+  console.warn(`⚠️  Bot did not come back online within ${maxWaitMs/1000} seconds`);
+  return { success: false, error: 'Bot restart timeout' };
 };
 
 const truncateLog = (value) => {
@@ -173,8 +147,9 @@ exports.startScrape = async (req, res) => {
 
     const result = await runTenantScrape(scrapeOptions);
 
-    // Refresh bot cache after successful scrape so bot uses new data
-    const cacheRefresh = await refreshBotCache(tenantContext);
+    // Bot restarts automatically after scrape (triggered in scrapeJob.js)
+    // Wait for it to come back online
+    const restartResult = await waitForBotRestart(tenantContext);
 
     res.json({
       success: true,
@@ -183,8 +158,7 @@ exports.startScrape = async (req, res) => {
       summary: result.summary,
       stdout: truncateLog(result.stdout),
       stderr: truncateLog(result.stderr),
-      cacheRefreshed: cacheRefresh.success,
-      documentCount: cacheRefresh.documentCount
+      botRestarted: restartResult.success
     });
   } catch (err) {
     console.error('❌ Scrape job failed:', {
@@ -265,8 +239,9 @@ exports.runUpdater = async (req, res) => {
 
     const result = await runTenantUpdater(updaterOptions);
 
-    // Refresh bot cache after successful update so bot uses new data
-    const cacheRefresh = await refreshBotCache(tenantContext);
+    // Bot restarts automatically after update (triggered in scrapeJob.js)
+    // Wait for it to come back online
+    const restartResult = await waitForBotRestart(tenantContext);
 
     res.json({
       success: true,
@@ -275,8 +250,7 @@ exports.runUpdater = async (req, res) => {
       summary: result.summary,
       stdout: truncateLog(result.stdout),
       stderr: truncateLog(result.stderr),
-      cacheRefreshed: cacheRefresh.success,
-      documentCount: cacheRefresh.documentCount
+      botRestarted: restartResult.success
     });
   } catch (err) {
     console.error('❌ Updater job failed:', {
